@@ -3,6 +3,7 @@ import PytorchRNN
 import LSTMNN
 
 #######Q4
+# Run Own implementation of Ellman
 Q4 = False
 if Q4:
     print('Training own implementation of Ellman')
@@ -14,12 +15,13 @@ if Q4:
 
 
 #######Q5
+# Tune hyperparameters for Elman implementation of Pytorch (RNN) and LSTM
 from bayes_opt import BayesianOptimization
 
 hyper_param_space = {
-    'emb_size': (50, 500),
-    'hidden_size': (50, 500),
-    'lr': (1e-7, 1e-3),
+    'emb_size': (100, 500),
+    'hidden_size': (100, 500),
+    'lr': (1e-6, 1e-2),
 }
 RNN = False
 LSTM = True

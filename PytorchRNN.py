@@ -87,7 +87,7 @@ def trainModel(**params):
     
     # Get batches with random slices if True
     batch_size = 200
-    padded_tensor_batches, targets = getBatches(x_train, y_train, batch_size, random_slices=False) 
+    padded_tensor_batches, targets = getBatches(x_train, y_train, batch_size, random_slices=True) 
     val_x, val_y = getBatches(x_val, y_val, batch_size,random_slices=False)
 
     # Initialize the model
