@@ -7,7 +7,6 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
 
-# Custom dataset class
 class IMDBDataset(Dataset):
     def __init__(self, input, labels):
         self.input = input
@@ -17,7 +16,11 @@ class IMDBDataset(Dataset):
         return len(self.input)
     
     def __getitem__(self, idx):
-        return self.input[idx], self.labels[idx]
+        input_sequence = self.input[idx]
+        label = self.labels[idx]
+        mask = (input_sequence != 0)
+        
+        return input_sequence, label, mask
 
 
 class Classifier(nn.Module):
@@ -27,13 +30,14 @@ class Classifier(nn.Module):
         self.linear1 = nn.Linear(embedding_size, hidden_size)
         self.linear2 = nn.Linear(hidden_size, output_size)
     
-    def forward(self, input):
+    def forward(self, input, mask):
         input = self.embedding(input)
         batch_size, seq_len, embedding_size = input.size()
         input = input.reshape(batch_size * seq_len, embedding_size) # Reshape to apply linear layer
         input = self.linear1(input)
         input = input.reshape(batch_size, seq_len, embedding_size) # Shape back to original
         input = F.relu(input)
+        input = input * mask.unsqueeze(-1) # Apply mask to zero out padding
         global_max_pool, _ = torch.max(input, dim = 1) # Global max pooling along the time dimension (dim = 1)
         output = self.linear2(global_max_pool)
     
@@ -45,17 +49,18 @@ def training_Classifier(model, training_loader, validation_loader, optimizer, nu
         total_loss = 0
         total = 0
         correct = 0
-        for input, labels in training_loader:
+
+        for input, label, mask in training_loader:
             optimizer.zero_grad()
-            output = model(input)
-            loss = F.cross_entropy(output, labels)
+            output = model(input, mask)
+            loss = F.cross_entropy(output, label)
             total_loss += loss.item()
             loss.backward()
             optimizer.step()
 
             _, predicted = torch.max(output.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+            total += label.size(0)
+            correct += (predicted == label).sum().item()
 
             batch_accuracy = 100 * correct / total
         
@@ -71,12 +76,13 @@ def evaluate_Classifier(model, validation_loader):
     model.eval()  # Evaluation mode
     total = 0
     correct = 0
+
     with torch.no_grad():  # No gradient calculation
-        for input, labels in validation_loader:
-            output = model(input)
+        for input, label, mask in validation_loader:
+            output = model(input, mask)
             _, predicted = torch.max(output.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+            total += label.size(0)
+            correct += (predicted == label).sum().item()
 
     accuracy = 100 * correct / total
     

@@ -20,16 +20,24 @@ def pad_convert(input_batch):
     It returns the padded batch as a tensor.
     """
 
-    (input, labels) = zip(*input_batch)
+    (input, labels, _) = zip(*input_batch)
 
     pad_token = 0
     max_len = len(max(input, key=len))
+
+    padded_input = []
+    masks = []
     
     for seq in input:
-        if len(seq) < max_len:
-            seq.extend([pad_token] * (max_len - len(seq)))
-    padded_input = torch.tensor(input, dtype = torch.long)
+        # Create mask for the sequence, 1 for real tokens, 0 for padding
+        mask = [1] * len(seq) + [0] * (max_len - len(seq))
+        masks.append(mask)
 
+        padded_seq = seq + [pad_token] * (max_len - len(seq))
+        padded_input.append(padded_seq)
+
+    padded_input = torch.tensor(padded_input, dtype = torch.long)
+    masks = torch.tensor(masks, dtype = torch.long)
     labels = torch.tensor(labels, dtype = torch.long)
 
-    return padded_input, labels
+    return padded_input, labels, masks
